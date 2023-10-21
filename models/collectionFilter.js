@@ -8,7 +8,7 @@ export default class CollectionFilter {
 
     get() {
         //console.log(typeof(this.params));   
-        let outputList = [];
+        let outputList = new Set();
         for (const [key, value] of Object.entries(this.params)) {
             //console.log(`${key}: ${value}`);
             switch (key) {
@@ -25,22 +25,53 @@ export default class CollectionFilter {
                     console.log("FIELD");
                     break;
                 default:
-
-                    this.list.forEach(entry => {                        
+                    // console.log(value.charAt(0), value.charAt(value.length - 1));
+                    // console.log(value.charAt(0) == '*' && value.charAt(value.length - 1) !== '*');
+                    this.list.forEach(entry => {
                         if (this.valueMatch(entry[this.capitalizeFirstLetter(key)], value))
-                            outputList.push(entry);
+                            outputList.add(entry);
                     });
-                    break;
+                    // if (value.charAt(0) == '*' && value.charAt(value.length - 1) !== '*') {
+                    //     this.list.forEach(entry => {
+                    //         if (this.valueMatchStartWith(entry[this.capitalizeFirstLetter(key)], value))
+                    //             outputList.add(entry);
+                    //     });
+                    // }
+
+                    // else if (value[0] !== '*' && value[value.length - 1] == '*') {
+
+                    // }
+
+                    // else if (value[0] == '*' && value[value.length - 1] == '*') {
+
+                    // }
+
+                    // else if (value.charAt(0) !== '*' && value.charAt(value.length - 1) !== '*') {
+                    //     this.list.forEach(entry => {
+                    //         if (this.valueMatch(entry[this.capitalizeFirstLetter(key)], value))
+                    //             outputList.add(entry);
+                    //     });
+                    // }
+
+                    return outputList;
             }
+            if (Object.values(this.params).length == this.NOFILTER)
+                outputList = this.list;
+            console.log(outputList);
+            break;
         }
-        if (Object.values(this.params).length == this.NOFILTER)
-            outputList = this.list;
-        console.log(outputList);
-        return outputList;
+    }
+
+
+    hasWildCard(value, searchValue) {
+
     }
     valueMatch(value, searchValue) {
         try {
             let exp = '^' + searchValue.toLowerCase().replace(/\*/g, '.*') + '$';
+            console.log(exp, value.toLowerCase());
+            console.log(RegExp(exp).test(value.toString().toLowerCase()));
+
             return new RegExp(exp).test(value.toString().toLowerCase());
         } catch (error) {
             console.log(error);
@@ -49,7 +80,9 @@ export default class CollectionFilter {
     }
     valueMatchStartWith(value, searchValue) {
         try {
-            let exp = '^' + searchValue.toLowerCase().replace(/\*/g, '.*') + '$';
+            let exp = '^' + searchValue.toLowerCase().replace(/\*/g, '')+'*';
+            console.log(exp, value.toLowerCase());
+            console.log(RegExp(exp).test(value.toString().toLowerCase()));
             return new RegExp(exp).test(value.toString().toLowerCase());
         } catch (error) {
             console.log(error);
@@ -85,7 +118,7 @@ export default class CollectionFilter {
         else
             return this.compareNum(x, y);
     }
-    capitalizeFirstLetter(string){
-        return string.charAt(0).toUpperCase()+string.slice(1);
+    capitalizeFirstLetter(string) {
+        return string.charAt(0).toUpperCase() + string.slice(1);
     }
 }
