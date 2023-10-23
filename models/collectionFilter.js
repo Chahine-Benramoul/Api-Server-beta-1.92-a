@@ -1,5 +1,5 @@
 export default class CollectionFilter {
-    NOFILTER = 0;
+    NOFILTER = null;
     constructor(list, params, model) {
         this.list = list;
         this.params = params;
@@ -7,10 +7,12 @@ export default class CollectionFilter {
     }
 
     get() {
-        //console.log(typeof(this.params));   
-        let outputList = new Set();
+
+        if (this.params == this.NOFILTER)
+            return this.list;
+
         for (const [key, value] of Object.entries(this.params)) {
-            //console.log(`${key}: ${value}`);
+            // The parameter : prendre le premier param puis faire and le 2 eme ... and 3 eme
             switch (key) {
                 case "limit":
                     console.log("LIMIT");
@@ -20,85 +22,77 @@ export default class CollectionFilter {
                     break;
                 case "sort":
                     console.log("SORT");
+                    const sort = this.params[key].split(',');
+                    const sortField = this.capitalizeFirstLetter(sort[0]);
+
+                    this.list.sort(function (a, b) {
+                        const valA = a[sortField];
+                        const valB = b[sortField];
+                        function innerCompare(x, y) {
+                            if ((typeof x) === 'string')
+                                return x.toLowerCase().localeCompare(y.toLowerCase());
+                            else
+                                return compareNum(x, y);
+                        }
+                        function compareNum(x, y) {
+                            if (x === y) return 0;
+                            else if (x < y) return -1;
+                            return 1;
+                        }
+                        return innerCompare(valA, valB);
+                    })
+                    if (sort[1] == 'desc')
+                        this.list.reverse();
                     break;
                 case "field":
                     console.log("FIELD");
+                    let set = new Set();
+                    let fields = this.params[key].split(',');
+                    const array = [];
+
+
+                    for (let index = 0; index < this.list.length; index++) {
+                        fields.forEach(field => {
+                            set.add(index);
+                            set[index].add(this.list[index][field]);
+                        });
+                    };
+
+                    set.forEach(s => array.push({t:s}));
+
+                    this.list = array;
+                    break;
+                case "id":
+                    let arr = [];
+                    for (let index = 0; index < this.list.length; index++) {
+                        const entry = this.list[index];
+                        if (!this.innerCompare(entry[this.capitalizeFirstLetter(key)], parseInt(value)) === 0) {
+                            arr.push(entry);
+                            break;
+                        }
+                    }
+                    this.list = arr;
                     break;
                 default:
-                    // console.log(value.charAt(0), value.charAt(value.length - 1));
-                    // console.log(value.charAt(0) == '*' && value.charAt(value.length - 1) !== '*');
-                    this.list.forEach(entry => {
-                        if (this.valueMatch(entry[this.capitalizeFirstLetter(key)], value))
-                            outputList.add(entry);
-                    });
-                    // if (value.charAt(0) == '*' && value.charAt(value.length - 1) !== '*') {
-                    //     this.list.forEach(entry => {
-                    //         if (this.valueMatchStartWith(entry[this.capitalizeFirstLetter(key)], value))
-                    //             outputList.add(entry);
-                    //     });
-                    // }
-
-                    // else if (value[0] !== '*' && value[value.length - 1] == '*') {
-
-                    // }
-
-                    // else if (value[0] == '*' && value[value.length - 1] == '*') {
-
-                    // }
-
-                    // else if (value.charAt(0) !== '*' && value.charAt(value.length - 1) !== '*') {
-                    //     this.list.forEach(entry => {
-                    //         if (this.valueMatch(entry[this.capitalizeFirstLetter(key)], value))
-                    //             outputList.add(entry);
-                    //     });
-                    // }
-
-                    return outputList;
+                    let arr2 = [];
+                    for (let index = 0; index < this.list.length; index++) {
+                        const entry = this.list[index];
+                        if (this.valueMatch(entry[this.capitalizeFirstLetter(key)], value)) {
+                            arr2.push(entry);
+                            console.log(entry[this.capitalizeFirstLetter(key)], value);
+                        }
+                    }
+                    this.list = arr2;
+                    break;
             }
-            if (Object.values(this.params).length == this.NOFILTER)
-                outputList = this.list;
-            console.log(outputList);
-            break;
+
+            //console.log(this.list);
+
         }
+        return this.list;
     }
 
-
-    hasWildCard(value, searchValue) {
-
-    }
     valueMatch(value, searchValue) {
-        try {
-            let exp = '^' + searchValue.toLowerCase().replace(/\*/g, '.*') + '$';
-            console.log(exp, value.toLowerCase());
-            console.log(RegExp(exp).test(value.toString().toLowerCase()));
-
-            return new RegExp(exp).test(value.toString().toLowerCase());
-        } catch (error) {
-            console.log(error);
-            return false;
-        }
-    }
-    valueMatchStartWith(value, searchValue) {
-        try {
-            let exp = '^' + searchValue.toLowerCase().replace(/\*/g, '')+'*';
-            console.log(exp, value.toLowerCase());
-            console.log(RegExp(exp).test(value.toString().toLowerCase()));
-            return new RegExp(exp).test(value.toString().toLowerCase());
-        } catch (error) {
-            console.log(error);
-            return false;
-        }
-    }
-    valueMatchEndWith(value, searchValue) {
-        try {
-            let exp = '^' + searchValue.toLowerCase().replace(/\*/g, '.*') + '$';
-            return new RegExp(exp).test(value.toString().toLowerCase());
-        } catch (error) {
-            console.log(error);
-            return false;
-        }
-    }
-    valueMatchContain(value, searchValue) {
         try {
             let exp = '^' + searchValue.toLowerCase().replace(/\*/g, '.*') + '$';
             return new RegExp(exp).test(value.toString().toLowerCase());
